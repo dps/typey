@@ -1,0 +1,118 @@
+<html>
+<head>
+    <title>Typey McTypeface</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.css">
+    <style>
+        .secondary {
+            background-color: dimgray;
+            color: silver;
+            border-color: darkgray;
+        }
+    </style>
+</head>
+<body>
+    <div class="notice">
+        <h1>Typey McTypeface &nbsp; 🪄⌨️</h1>
+        <p>Record your keystrokes so you can play them back again later and make your demo look ✨🦄🌈.</p>
+        <div>
+            <input id="inp" type="text" style="width:100%;" placeholder="Type here to record keystrokes" />
+            <button class="secondary" onclick="reset()">Start over</button> <button onclick="saveKeystrokes()">Save Keystrokes</button>
+            <p id="strokes"></p>
+        </div>    
+        <div>
+            <code id="output">
+                lua array will appear here, click to copy to clipboard
+            </code>
+        </div>    
+    </div>
+
+<pre class="language-lua">
+// 🔨🥄 Example hammerspoon config
+
+// Paste your keystrokes array defn here.
+
+function typeOutKeystrokes(keystrokes)
+    -- Ensure the frontmost application is active to receive keystrokes
+    hs.application.frontmostApplication():activate()
+
+    -- Function to "type" each character with a specific delay
+    for i, stroke in ipairs(keystrokes) do
+        hs.timer.doAfter((stroke.delay/1000)*0.5, function()
+            if stroke.key == "Backspace" then
+                hs.eventtap.keyStroke({}, "delete")
+            else
+                hs.eventtap.keyStrokes(stroke.key)
+            end
+        end)
+    end
+end
+
+hs.hotkey.bind({"alt"}, "1", function()
+    typeOutKeystrokes(keystrokes)
+end)
+</pre>
+
+<script>
+let keystrokes = [];
+let firstTimestamp = null;
+let strokes = 0;
+
+document.addEventListener('keydown', function(event) {
+    const timestamp = Date.now();  // Get the current timestamp
+    if (firstTimestamp === null) firstTimestamp = timestamp;  // Set the first timestamp
+
+    strokes += 1;
+    document.getElementById("strokes").innerHTML = strokes + " keystrokes recorded";
+    keystrokes.push({
+        key: event.key,
+        delay: timestamp - firstTimestamp  // Calculate the time difference
+    });
+});
+
+function reset() {
+    keystrokes = [];
+    firstTimestamp = null;
+    strokes = 0;
+    document.getElementById("strokes").innerHTML = "";
+    document.getElementById("output").innerHTML = "";
+    document.getElementById("inp").value = "";
+}
+
+function saveKeystrokes() {
+    console.log(keystrokes);
+    let luaArray = "keystrokes = {\n";
+    keystrokes.forEach(stroke => {
+        luaArray += `    { key = "${stroke.key.replace(/"/g, '\\"')}", delay = ${stroke.delay} },\n`;  // Escape double quotes
+    });
+    luaArray += "}\n";
+    console.log(luaArray);
+    document.getElementById("output").innerHTML = luaArray;
+}
+
+document.getElementById('output').addEventListener('click', function() {
+   // Create a range and a selection to select the text
+   const range = document.createRange();
+   const selection = window.getSelection();
+   
+   // Clear current selection
+   selection.removeAllRanges();
+   
+   // Select the text inside the div
+   range.selectNodeContents(this);
+   selection.addRange(range);
+   
+   try {
+      document.execCommand('copy');
+   } catch (err) {
+      alert('Failed to copy text');
+   }
+   
+   // Clear selection if you do not want it to stay highlighted
+   selection.removeAllRanges();
+});
+
+hljs.highlightAll();
+
+</script>
+</body>
+</html>
